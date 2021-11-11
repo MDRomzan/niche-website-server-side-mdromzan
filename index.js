@@ -1,5 +1,6 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
+const ObjectId=require("mongodb").ObjectId;
 const cors = require("cors");
 const app = express();
 require('dotenv').config()
@@ -14,12 +15,40 @@ const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
-console.log(uri);
+// console.log(uri);
 
 async function run(){
     try{
         await client.connect();
-        console.log("Hello Baby How Are Youeee")
+        const database =client.db("rdBycycle");
+        const exploresCollection=database.collection("explores");
+        const orderCollection=database.collection("orders");
+        const usersCollection=database.collection("users");
+        // get all data 
+        app.get("/explores",async(req,res)=>{
+            const cursor=exploresCollection.find({});
+            const explores=await cursor.toArray();
+            res.send(explores);
+        });
+        // get single explore
+        app.get("/explores/:id",async(req,res)=>{
+            const id =req.params.id;
+            console.log(id);
+            const query={_id:ObjectId(id)};
+            const explore=await exploresCollection.findOne(query);
+            console.log(explore);
+            res.json(explore);
+        });
+        // add orders post 
+        app.post("/orders",async(req,res)=>{
+            const order=req.body;
+            // console.log("order", order);
+            const result=await orderCollection.insertOne(order);
+            console.log(result);
+            // res.json(result)
+        });
+        // add all users database
+       
     }
     finally{
         // await cliant.close();
