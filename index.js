@@ -14,10 +14,10 @@ app.use(express.json());
 // niche-website-client-side-firebase-adminsdk.json
 
 
-const serviceAccount = require("./niche-website-client-side-firebase-adminsdk.json");
+const productAccount =JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(productAccount)
 });
 
 
@@ -58,9 +58,43 @@ async function run(){
             res.send(explores);
         });
         // explore post 
-
-
-
+         // add products post 
+            app.post("/explores", async (req, res) => {
+                const product = req.body;
+                console.log("hiiting the post api", product);
+                const result = await exploresCollection.insertOne(product);
+                console.log(result);
+                res.json(result);
+                //res.send("posted hitt")
+            });
+            // product delete single
+            app.delete("/explores/:id",async(req,res)=>{
+            const id=req.params.id;
+            const query={_id:ObjectId(id)};
+            const result=await exploresCollection.deleteOne(query);
+            res.json(result);
+        });
+        // update product 
+        app.put("/explores/:id",async(req,res)=>{
+        const id=req.params.id;
+        // console.log("updating",req);
+        const updateProduct=req.body;
+        // // console.log(updateProduct);
+        const filter={_id:ObjectId(id)};
+        const options ={upsert:true};
+        const updateDoc ={
+            $set:{
+                name:updateProduct.name,
+                img:updateProduct.img,
+                price:updateProduct.price,
+                Description: updateProduct.Description
+            },
+        };
+         const result = await exploresCollection.updateOne(filter,updateDoc,options);
+        // console.log("updateing Service ", req);
+        res.json(result)
+        // res.send("updating not for dating")
+    });
 
         // get single explore
         app.get("/explores/:id",async(req,res)=>{
