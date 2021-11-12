@@ -168,7 +168,7 @@ async function run(){
             const result=await usersCollection.updateOne(filter,updateDoc,options);
             res.json(result);
         });
-        // get user admin
+        // get user admin panel
          app.get("/users/:email",async(req,res)=>{
             const email=req.params.email;
             const query={email:email};
