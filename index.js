@@ -113,6 +113,13 @@ async function run(){
             // console.log(result);
              res.json(result)
         });
+
+        // all orders get
+        app.get("/orders", async (req, res) => {
+            const cursor = orderCollection.find({});
+            const orders = await cursor.toArray();
+            res.send(orders);
+        });
         // delete order
         app.delete("/deleteOrder/:id",async(req,res)=>{
            const result=await orderCollection.deleteOne({_id:ObjectId(req.params.id),}) ;
@@ -129,6 +136,21 @@ async function run(){
             console.log(orders);
             res.json(orders);
         });
+        // order update status
+        app.put("/updateStatus/:id",(req,res)=>{
+            const id =req.params.id;
+            const updateStatus=req.body.status;
+            const filter={_id:ObjectId(id)}
+            console.log(updateStatus)
+             const result=orderCollection.updateOne(filter,{
+                 $set:{status:updateStatus},
+             })
+             .then(result =>{
+                 res.send(result)
+             })
+
+
+        })
         // users collection post
         app.post("/users",async(req,res)=>{
             const user=req.body;
