@@ -2,6 +2,7 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const ObjectId=require("mongodb").ObjectId;
 const cors = require("cors");
+const admin = require("firebase-admin");
 const app = express();
 require('dotenv').config()
 const port =process.env.PORT || 5000
@@ -10,13 +11,39 @@ const port =process.env.PORT || 5000
 app.use(cors());
 app.use(express.json());
 
+// niche-website-client-side-firebase-adminsdk.json
+
+
+const serviceAccount = require("./niche-website-client-side-firebase-adminsdk.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ej29o.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
 // console.log(uri);
+async function verifyToken(req, res, next){
+    if(req.headers?.authorization?.startsWith("Bearer ")){
+        const token = req.headers.authorization.split(' ')[1];
+        console.log(token);
+         try{
+        const decodedUser= await admin.auth().verifyIdToken(token); 
+        req.decodedEmail=decodedUser.email;
+  
+    }
+    catch{
 
+    }
+    }
+   
+
+    next();
+}
 async function run(){
     try{
         await client.connect();
@@ -30,25 +57,90 @@ async function run(){
             const explores=await cursor.toArray();
             res.send(explores);
         });
+        // explore post 
+
+
+
+
         // get single explore
         app.get("/explores/:id",async(req,res)=>{
             const id =req.params.id;
-            console.log(id);
+            // console.log(id);
             const query={_id:ObjectId(id)};
             const explore=await exploresCollection.findOne(query);
-            console.log(explore);
+            // console.log(explore);
             res.json(explore);
         });
         // add orders post 
         app.post("/orders",async(req,res)=>{
             const order=req.body;
-            // console.log("order", order);
+            console.log("order", order);
             const result=await orderCollection.insertOne(order);
-            console.log(result);
-            // res.json(result)
+            // console.log(result);
+             res.json(result)
         });
-        // add all users database
-       
+        // orders get database
+        app.get("/orders",verifyToken,async (req, res) => {
+            const email =req.query.email;
+            console.log(email)
+            const query ={email:email};
+            const cursor=orderCollection.find(query);
+            const orders=await cursor.toArray();
+            console.log(orders);
+            res.json(orders);
+        });
+        // users collection post
+        app.post("/users",async(req,res)=>{
+            const user=req.body;
+            const result=await usersCollection.insertOne(user);
+            console.log(result);
+            res.json(result);
+        }); 
+        // update login user save database
+        app.put("/users",async(req,res)=>{
+            const user= req.body;
+            // console.log("Put", user);
+            const filter={email:user.email}
+            const options = { upsert: true };
+            const updateDoc ={$set:user};
+            const result=await usersCollection.updateOne(filter,updateDoc,options);
+            res.json(result);
+        });
+        // get user admin
+         app.get("/users/:email",async(req,res)=>{
+            const email=req.params.email;
+            const query={email:email};
+            const user=await usersCollection.findOne(query);
+            let isAdmin=false;
+            if(user?.role ==="admin"){
+                isAdmin=true;
+            }
+            res.json({admin:isAdmin});
+        })
+    //    user admin  panel
+        app.put("/users/admin",verifyToken,async(req,res)=>{
+            const user=req.body;
+            //  console.log("Put",req.decodedEmail);
+            const requester=req.decodedEmail;
+            if(requester){
+                const requesterAccount=await usersCollection.findOne({email:requester});
+                if(requesterAccount.role==="admin" ){
+                    const filter={email:user.email};
+                    const updateDoc={$set:{role:"admin"}};
+                    const result=await usersCollection.updateOne(filter,updateDoc);
+                    console.log(result)
+                    res.json(result);
+
+                }
+
+            }
+            else{
+                res.status(403).json({message:"You do not have access to make Admin"})
+            }
+
+
+            
+        })
     }
     finally{
         // await cliant.close();
