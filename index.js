@@ -113,6 +113,12 @@ async function run(){
             // console.log(result);
              res.json(result)
         });
+        // delete order
+        app.delete("/deleteOrder/:id",async(req,res)=>{
+           const result=await orderCollection.deleteOne({_id:ObjectId(req.params.id),}) ;
+           console.log(result);
+           res.json(result);
+        })
         // orders get database
         app.get("/orders",verifyToken,async (req, res) => {
             const email =req.query.email;
