@@ -114,12 +114,7 @@ async function run(){
              res.json(result)
         });
 
-        // all orders get
-        app.get("/orders", async (req, res) => {
-            const cursor = orderCollection.find({});
-            const orders = await cursor.toArray();
-            res.send(orders);
-        });
+        
         // delete order
         app.delete("/deleteOrder/:id",async(req,res)=>{
            const result=await orderCollection.deleteOne({_id:ObjectId(req.params.id),}) ;
