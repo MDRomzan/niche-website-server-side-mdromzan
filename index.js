@@ -105,6 +105,14 @@ async function run(){
             // console.log(explore);
             res.json(explore);
         });
+            // manage all order
+        app.get("/allOrders",async(req,res)=>{
+            const cursor=orderCollection.find({});
+            const explores=await cursor.toArray();
+            res.send(explores);
+        });
+
+
         // add orders post 
         app.post("/orders",async(req,res)=>{
             const order=req.body;
