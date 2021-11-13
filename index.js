@@ -73,7 +73,7 @@ async function run(){
             const explores=await cursor.toArray();
             res.send(explores);
         });
-        // explore post 
+        // explore post add 
          // add products post 
             app.post("/explores", async (req, res) => {
                 const product = req.body;
