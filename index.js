@@ -51,6 +51,22 @@ async function run(){
         const exploresCollection=database.collection("explores");
         const orderCollection=database.collection("orders");
         const usersCollection=database.collection("users");
+        const orderReviewCollection=database.collection("review");
+
+        // review post 
+        app.post("/review",async(req,res)=>{
+            const reviewer=req.body;
+            console.log("hiiting review",reviewer);
+            const result=await orderReviewCollection.insertOne(reviewer);
+            console.log(result);
+            res.json(result);
+        });
+        // review get 
+        app.get("/review",async(req,res)=>{
+            const cursor=orderReviewCollection.find({});
+            const review=await cursor.toArray();
+            res.json(review);
+        })
         // get all data 
         app.get("/explores",async(req,res)=>{
             const cursor=exploresCollection.find({});
@@ -202,11 +218,10 @@ async function run(){
             else{
                 res.status(403).json({message:"You do not have access to make Admin"})
             }
-
-
             
         })
     }
+
     finally{
         // await cliant.close();
     }
