@@ -2,7 +2,12 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const ObjectId=require("mongodb").ObjectId;
 const cors = require("cors");
+
 const admin = require("firebase-admin");
+// 
+const stripe = require("stripe")('sk_test_51JvntCDJwE53buNKvtOlbspy9d3dY829l9VtdOFKl7jMsHJPDZSlFOItbOlDc0IENOK5dxtfV9agflHmdyTLJMlc00YNzCWVjr');
+// const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const app = express();
 require('dotenv').config()
 const port =process.env.PORT || 5000
@@ -52,6 +57,20 @@ async function run(){
         const orderCollection=database.collection("orders");
         const usersCollection=database.collection("users");
         const orderReviewCollection=database.collection("review");
+
+        // stripe payment method use
+        app.post("/create-payment-intent",async(req,res)=>{
+            const paymentInfo=req.body;
+            const amount=paymentInfo.price*100;
+            const paymentIntent=await stripe.paymentIntents.create({
+                currency: "usd",
+                amount:amount,
+                payment_method_types:[
+                    "card"
+                ]
+            });
+            res.json({clientSecret: paymentIntent.client_secret})
+        })
 
         // review post 
         app.post("/review",async(req,res)=>{
@@ -125,7 +144,7 @@ async function run(){
         app.get("/allOrders",async(req,res)=>{
             const cursor=orderCollection.find({});
             const explores=await cursor.toArray();
-            res.send(explores);
+            res.json(explores);
         });
 
 
@@ -155,6 +174,16 @@ async function run(){
             console.log(orders);
             res.json(orders);
         });
+        // order payment id 
+        app.get("/allOrders/:id",async(req,res)=>{
+            const id=req.params.id;
+            console.log(id)
+            const query= {_id:ObjectId(id)};
+            const result=await orderCollection.findOne(query);
+            console.log(result);
+            res.json(result); 
+
+        })
         // order update status
         app.put("/updateStatus/:id",(req,res)=>{
             const id =req.params.id;
@@ -168,6 +197,21 @@ async function run(){
                  res.send(result)
              })
 
+
+        });
+        // update payment method
+        app.put("/allOrders/:id",async(req,res)=>{
+            const id=req.params.id;
+            const payment=req.body;
+            const filter={_id:ObjectId(id)};
+            const updateDoc={
+                $set:{
+                    payment:payment
+                }
+            }
+            const result=await orderCollection.updateOne(filter,updateDoc);
+            console.log(result);
+            res.json(result);
 
         })
         // users collection post
